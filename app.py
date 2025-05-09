@@ -30,8 +30,17 @@ A: はい、学生や研究者の方からのご依頼も歓迎しておりま�
 @app.route("/webhook", methods=["POST"])
 def webhook():
     try:
-        user_msg = request.json.get("message")
+        data = request.get_json()
+        print("Received data from Zoho:", data)  # デバッグ用
 
+        # ユーザーの質問を取得（Zohoの形式に合わせる）
+        user_msg = data.get("visitor", {}).get("question", "")
+
+        # 念のため空チェック
+        if not user_msg:
+            return jsonify({"replies": [{"type": "text", "text": "質問が見つかりませんでした。"}]}), 400
+
+        # OpenAIに問い合わせ
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -40,7 +49,14 @@ def webhook():
             ]
         )
 
-        return jsonify({"reply": response.choices[0].message.content})
+        reply_text = response.choices[0].message.content.strip()
+
+        # Zoho SalesIQの形式で返す
+        return jsonify({
+            "replies": [
+                {"type": "text", "text": reply_text}
+            ]
+        })
     except Exception as e:
         print("Error:", e)
         return jsonify({"error": str(e)}), 500
