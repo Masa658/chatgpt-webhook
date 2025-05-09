@@ -29,39 +29,27 @@ A: はい、学生や研究者の方からのご依頼も歓迎しておりま�
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    try:
-        data = request.get_json(force=True)
-        print("Received JSON:", data) # ← ここでログに出力
+    data = request.get_json(force=True)
+    print("Received data from Zoho:", data)
 
-        # Zohoからのデータが期待通りであることをチェック
-        user_msg = data.get("visitor", {}).get("question", "")
+    # メッセージが存在するかを確認
+    handler = data.get("handler")
+    if handler == "message":
+        user_msg = data.get("message", {}).get("text", "")
         if not user_msg:
-            return jsonify({"replies": [{"type": "text", "text": "質問内容が取得できませんでした。"}]}), 400
+            return jsonify({"replies": [{"type": "text", "text": "メッセージが見つかりませんでした。"}]}), 400
 
-        # ChatGPTへ問い合わせ
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": f"あなたはYUMO PARTSのカスタマーサポートAIです。以下のFAQに基づいて回答してください。\n{faq_context}"},
-                {"role": "user", "content": user_msg}
-            ]
-        )
+        # ChatGPT に送信して返信を生成（ダミー返信）
+        reply_text = f"ご質問ありがとうございます。『{user_msg}』に関するご案内を準備中です。"
 
-        ai_reply = response.choices[0].message['content']
-
-        # Zohoが期待する形式で返す
         return jsonify({
             "replies": [
-                {
-                    "type": "text",
-                    "text": ai_reply
-                }
+                {"type": "text", "text": reply_text}
             ]
-        })
+        }), 200
 
-    except Exception as e:
-        print("Webhook error:", e)
-        return jsonify({"replies": [{"type": "text", "text": "エラーが発生しました。"}]}), 500
+    # その他の handler（例: trigger）は無視
+    return jsonify({"replies": [{"type": "text", "text": "メッセージ以外のイベントは処理していません。"}]}), 200
 
 if __name__ == "__main__":
     app.run(port=5000)
