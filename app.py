@@ -60,3 +60,7 @@ def webhook():
         }), 200
 
     return jsonify({"replies": [{"type": "text", "text": "メッセージ以外のイベントは処理していません。"}]}), 200
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
