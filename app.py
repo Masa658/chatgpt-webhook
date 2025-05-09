@@ -1,9 +1,9 @@
 from flask import Flask, request, jsonify
+import openai
 import os
-from openai import OpenAI
 
 app = Flask(__name__)
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 faq_context = """
 YUMO PARTSのよくある質問：
@@ -27,21 +27,18 @@ Q: 学生や研究者でも依頼できますか？
 A: はい、学生や研究者の方からのご依頼も歓迎しております。
 """
 
-@app.route("/webhook", methods=["POST"])
+@app.route('/webhook', methods=['POST'])
 def webhook():
     try:
-        data = request.get_json()
-        print("Received data from Zoho:", data)  # デバッグ用
+        data = request.get_json(force=True)
 
-        # ユーザーの質問を取得（Zohoの形式に合わせる）
+        # Zohoからのデータが期待通りであることをチェック
         user_msg = data.get("visitor", {}).get("question", "")
-
-        # 念のため空チェック
         if not user_msg:
-            return jsonify({"replies": [{"type": "text", "text": "質問が見つかりませんでした。"}]}), 400
+            return jsonify({"replies": [{"type": "text", "text": "質問内容が取得できませんでした。"}]}), 400
 
-        # OpenAIに問い合わせ
-        response = client.chat.completions.create(
+        # ChatGPTへ問い合わせ
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": f"あなたはYUMO PARTSのカスタマーサポートAIです。以下のFAQに基づいて回答してください。\n{faq_context}"},
@@ -49,18 +46,22 @@ def webhook():
             ]
         )
 
-        reply_text = response.choices[0].message.content.strip()
+        ai_reply = response.choices[0].message['content']
 
-        # Zoho SalesIQの形式で返す
+        # Zohoが期待する形式で返す
         return jsonify({
             "replies": [
-                {"type": "text", "text": reply_text}
+                {
+                    "type": "text",
+                    "text": ai_reply
+                }
             ]
         })
+
     except Exception as e:
-        print("Error:", e)
-        return jsonify({"error": str(e)}), 500
+        print("Webhook error:", e)
+        return jsonify({"replies": [{"type": "text", "text": "エラーが発生しました。"}]}), 500
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(port=5000)
+
