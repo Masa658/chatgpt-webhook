@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
-# YUMO PARTSのFAQ情報をsystemメッセージに含める
+# YUMO PARTSのよくある質問を含むシステムメッセージ
 faq_context = """
 YUMO PARTSのよくある質問：
 
@@ -43,4 +43,6 @@ def webhook():
     return jsonify({"reply": response.choices[0].message['content']})
 
 if __name__ == "__main__":
-    app.run(port=5000)
+    # Renderが環境変数で提供するPORTを使用し、0.0.0.0で待ち受け
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
