@@ -40,7 +40,7 @@ def webhook():
 
         # OpenAI APIを使って返信を生成
         try:
-            response = openai.chat.completion.create(
+            response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "あなたはYUMO PARTSのカスタマーサポート担当者です。以下のFAQに基づいて、できる限り丁寧に回答してください:\n" + faq_context},
@@ -48,7 +48,7 @@ def webhook():
                 ],
                 temperature=0.3
             )
-            reply_text = response.choices[0].message.content.strip()
+            reply_text = response["choices"][0]["message"]["content"].strip()
         except Exception as e:
             print("OpenAI APIエラー:", e)
             reply_text = "回答の生成中にエラーが発生しました。もう一度お試しください。"
