@@ -2,10 +2,6 @@ from flask import Flask, request, jsonify
 import openai
 import os
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # RenderはこのPORTを設定します
-    app.run(host="0.0.0.0", port=port)
-
 app = Flask(__name__)
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
@@ -36,14 +32,12 @@ def webhook():
     data = request.get_json(force=True)
     print("Received data from Zoho:", data)
 
-    # メッセージが存在するかを確認
     handler = data.get("handler")
     if handler == "message":
         user_msg = data.get("message", {}).get("text", "")
         if not user_msg:
             return jsonify({"replies": [{"type": "text", "text": "メッセージが見つかりませんでした。"}]}), 400
 
-        # ChatGPT に送信して返信を生成（ダミー返信）
         reply_text = f"ご質問ありがとうございます。『{user_msg}』に関するご案内を準備中です。"
 
         return jsonify({
@@ -52,6 +46,8 @@ def webhook():
             ]
         }), 200
 
-    # その他の handler（例: trigger）は無視
     return jsonify({"replies": [{"type": "text", "text": "メッセージ以外のイベントは処理していません。"}]}), 200
 
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
