@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 import openai
 import os
+import logging
+logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 openai.api_key = os.environ.get("OPENAI_API_KEY")
@@ -30,10 +32,10 @@ A: はい、学生や研究者の方からのご依頼も歓迎しておりま�
 @app.route('/webhook', methods=['POST'])
 def webhook():
     data = request.get_json(force=True)
-    print("Received data from Zoho:", data)
+    logging.info(f"Received data from Zoho: {data}")
 
     handler = data.get("handler")
-    print("handler:", handler)
+    logging.info(f"handler: {handler}")
     
     if handler == "message":
         user_msg = data.get("message", {}).get("text", "")
@@ -52,7 +54,7 @@ def webhook():
             )
             reply_text = response["choices"][0]["message"]["content"].strip()
         except Exception as e:
-            print("OpenAI APIエラー:", e)
+            logging.info(f"OpenAI APIエラー: {e}")
             reply_text = "回答の生成中にエラーが発生しました。もう一度お試しください。"
 
         return jsonify({
