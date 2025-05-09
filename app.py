@@ -2,6 +2,10 @@ from flask import Flask, request, jsonify
 import openai
 import os
 
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))  # RenderはこのPORTを設定します
+    app.run(host="0.0.0.0", port=port)
+
 app = Flask(__name__)
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
@@ -50,7 +54,4 @@ def webhook():
 
     # その他の handler（例: trigger）は無視
     return jsonify({"replies": [{"type": "text", "text": "メッセージ以外のイベントは処理していません。"}]}), 200
-
-if __name__ == "__main__":
-    app.run(port=5000)
 
