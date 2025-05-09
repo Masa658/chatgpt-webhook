@@ -38,7 +38,20 @@ def webhook():
         if not user_msg:
             return jsonify({"replies": [{"type": "text", "text": "メッセージが見つかりませんでした。"}]}), 400
 
-        reply_text = f"ご質問ありがとうございます。『{user_msg}』に関するご案内を準備中です。"
+        # OpenAI APIを使って返信を生成
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "あなたはYUMO PARTSのカスタマーサポート担当者です。以下のFAQに基づいて、できる限り丁寧に回答してください:\n" + faq_context},
+                    {"role": "user", "content": user_msg}
+                ],
+                temperature=0.3
+            )
+            reply_text = response["choices"][0]["message"]["content"].strip()
+        except Exception as e:
+            print("OpenAI APIエラー:", e)
+            reply_text = "回答の生成中にエラーが発生しました。もう一度お試しください。"
 
         return jsonify({
             "replies": [
@@ -47,7 +60,3 @@ def webhook():
         }), 200
 
     return jsonify({"replies": [{"type": "text", "text": "メッセージ以外のイベントは処理していません。"}]}), 200
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
