@@ -138,7 +138,7 @@ def webhook():
 
     # その他のイベントは無視
     return jsonify({
-        "replies": [{"type": "text", "text": "メッセージ以外のイベントは処理していません。"}]
+        "replies": [{"type": "text", "text": "ご質問内容を入力してください。"}]
     }), 200
 
 # Render用ポート指定
