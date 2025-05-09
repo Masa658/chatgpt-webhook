@@ -1,11 +1,10 @@
 from flask import Flask, request, jsonify
-import openai
 import os
+from openai import OpenAI
 
 app = Flask(__name__)
-openai.api_key = os.environ.get("OPENAI_API_KEY")
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-# YUMO PARTSのよくある質問を含むシステムメッセージ
 faq_context = """
 YUMO PARTSのよくある質問：
 
@@ -28,21 +27,24 @@ Q: 学生や研究者でも依頼できますか？
 A: はい、学生や研究者の方からのご依頼も歓迎しております。
 """
 
-@app.route('/webhook', methods=['POST'])
+@app.route("/webhook", methods=["POST"])
 def webhook():
-    user_msg = request.json.get("message")
+    try:
+        user_msg = request.json.get("message")
 
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": f"あなたはYUMO PARTSのカスタマーサポートAIです。以下のFAQに基づいて回答してください。\n{faq_context}"},
-            {"role": "user", "content": user_msg}
-        ]
-    )
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": f"あなたはYUMO PARTSのカスタマーサポートAIです。以下のFAQに基づいて回答してください。\n{faq_context}"},
+                {"role": "user", "content": user_msg}
+            ]
+        )
 
-    return jsonify({"reply": response.choices[0].message['content']})
+        return jsonify({"reply": response.choices[0].message.content})
+    except Exception as e:
+        print("Error:", e)
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    # Renderが環境変数で提供するPORTを使用し、0.0.0.0で待ち受け
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
