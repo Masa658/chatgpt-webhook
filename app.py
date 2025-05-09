@@ -39,6 +39,8 @@ def webhook():
             return jsonify({"replies": [{"type": "text", "text": "メッセージが見つかりませんでした。"}]}), 400
 
         # OpenAI APIを使って返信を生成
+        print("ユーザーからのメッセージ:", user_msg)
+        print("OpenAIへのリクエスト開始")
         try:
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
