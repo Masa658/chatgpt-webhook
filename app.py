@@ -33,14 +33,14 @@ def webhook():
     print("Received data from Zoho:", data)
 
     handler = data.get("handler")
+    print("handler:", handler)
+    
     if handler == "message":
         user_msg = data.get("message", {}).get("text", "")
         if not user_msg:
             return jsonify({"replies": [{"type": "text", "text": "メッセージが見つかりませんでした。"}]}), 400
 
         # OpenAI APIを使って返信を生成
-        print("ユーザーからのメッセージ:", user_msg)
-        print("OpenAIへのリクエスト開始")
         try:
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
