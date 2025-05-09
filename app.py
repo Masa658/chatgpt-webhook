@@ -31,6 +31,7 @@ A: はい、学生や研究者の方からのご依頼も歓迎しておりま�
 def webhook():
     try:
         data = request.get_json(force=True)
+        print("Received JSON:", data) # ← ここでログに出力
 
         # Zohoからのデータが期待通りであることをチェック
         user_msg = data.get("visitor", {}).get("question", "")
