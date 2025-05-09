@@ -3,7 +3,7 @@ import openai
 import os
 
 app = Flask(__name__)
-client = openai(api_key=os.environ.get("OPENAI_API_KEY"))
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 faq_context = """
 YUMO PARTSのよくある質問：
