@@ -1,12 +1,18 @@
 from flask import Flask, request, jsonify
-import openai
+from openai import OpenAI
 import os
 import logging
+
+# ロギング設定
 logging.basicConfig(level=logging.INFO)
 
+# Flask アプリの初期化
 app = Flask(__name__)
-openai.api_key = os.environ.get("OPENAI_API_KEY")
 
+# OpenAI クライアントの初期化（v1形式）
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+# FAQデータ（プロンプトとして渡す）
 faq_context = """
 YUMO PARTSのよくある質問：
 
@@ -32,19 +38,19 @@ A: はい、学生や研究者の方からのご依頼も歓迎しておりま�
 @app.route('/webhook', methods=['POST'])
 def webhook():
     data = request.get_json(force=True)
-    logging.info(f"Received data from Zoho: {data}")
+    logging.info("Received data from Zoho: %s", data)
 
     handler = data.get("handler")
-    logging.info(f"handler: {handler}")
-    
+    logging.info("handler: %s", handler)
+
     if handler == "message":
         user_msg = data.get("message", {}).get("text", "")
         if not user_msg:
             return jsonify({"replies": [{"type": "text", "text": "メッセージが見つかりませんでした。"}]}), 400
 
-        # OpenAI APIを使って返信を生成
         try:
-            response = openai.ChatCompletion.create(
+            # OpenAI API 呼び出し
+            response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "あなたはYUMO PARTSのカスタマーサポート担当者です。以下のFAQに基づいて、できる限り丁寧に回答してください:\n" + faq_context},
@@ -52,7 +58,7 @@ def webhook():
                 ],
                 temperature=0.3
             )
-            reply_text = response["choices"][0]["message"]["content"].strip()
+            reply_text = response.choices[0].message.content.strip()
         except Exception as e:
             logging.info(f"OpenAI APIエラー: {e}")
             reply_text = "回答の生成中にエラーが発生しました。もう一度お試しください。"
@@ -63,8 +69,12 @@ def webhook():
             ]
         }), 200
 
-    return jsonify({"replies": [{"type": "text", "text": "メッセージ以外のイベントは処理していません。"}]}), 200
+    # その他のイベントは無視
+    return jsonify({
+        "replies": [{"type": "text", "text": "メッセージ以外のイベントは処理していません。"}]
+    }), 200
 
+# Render用ポート指定
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
